@@ -35,8 +35,8 @@ def solve_part_2_v2(data: str) -> int:
 
 
 def remove_disabled(data):
-    no_spaces = re.sub(r'\s+', '', data)
-    enabled_only = re.sub(r"don't\(\).+?do\(\)|don't\(\).+$", '', no_spaces)
+    one_line_data = re.sub(r'\n', '', data)
+    enabled_only = re.sub(r"don't\(\).+?do\(\)|don't\(\).+$", '', one_line_data)
     return enabled_only
 
 
