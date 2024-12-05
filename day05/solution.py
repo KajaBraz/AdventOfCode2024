@@ -18,25 +18,26 @@ def parse(data: List[List[int]]) -> Tuple[List[List[int]], List[List[int]]]:
 
 def solve_part_1(data: List[List[int]]) -> int:
     ordering, updates = parse(data)
-    return sum(update[len(update) // 2] for update in sort_valid_invalid(ordering, updates)[0])
+    following_nums_rules = get_following_nums(ordering)
+    valid, _ = get_valid_invalid(following_nums_rules, updates)
+    return sum(update[len(update) // 2] for update in valid)
 
 
 def solve_part_2(data: List[List[int]]) -> int:
     ordering, updates = parse(data)
     following_nums_rules = get_following_nums(ordering)
-    to_fix = sort_valid_invalid(ordering, updates)[1]
+    _, to_fix = get_valid_invalid(following_nums_rules, updates)
     fixed = (fix(update, following_nums_rules) for update in to_fix)
     return sum(update[len(update) // 2] for update in fixed)
 
 
-def sort_valid_invalid(ordering: List[List[int]], updates: List[List[int]]):
+def get_valid_invalid(following_rules: collections.defaultdict[int, Set[int]], updates: List[List[int]]):
     valid_updates, invalid_updates = [], []
     for update in updates:
         invalid = False
-        for n, m in ordering:
-            if n in update and m in update:
-                if update.index(n) >= update.index(m):
-                    invalid = True
+        for i in range(len(update)):
+            if not all(n in following_rules[update[i]] for n in update[i + 1:]):
+                invalid = True
         if invalid:
             invalid_updates.append(update)
         else:
