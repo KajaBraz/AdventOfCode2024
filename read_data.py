@@ -167,3 +167,6 @@ def get_data_09_all_line_ints(path: str) -> list[list[int]]:
     return [[int(n) for n in gr] for gr in [re.findall(r'-?\d+', row) for row in data]]
 
 
+def get_data_10_all_line_strs(path: str) -> list[list[str]]:
+    data = get_data_02_str_list(path)
+    return [[s for s in row] for row in data]
