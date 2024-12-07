@@ -10,35 +10,26 @@ import read_data
 
 
 def solve_part_1(data: typing.List[typing.List[int]]) -> int:
-    res = 0
-    for operation in data:
-        r, nums = operation[0], operation[1:]
-        if solve(r, nums[0], nums[1:]):
-            res += r
-    return res
+    data = [(operation[0], operation[1:]) for operation in data]
+    return sum([r for r, nums in data if solve(r, nums[0], nums[1:])])
 
 
 def solve_part_2(data: typing.List[typing.List[int]]) -> int:
-    res = 0
-    for operation in data:
-        r, nums = operation[0], operation[1:]
-        if solve(r, nums[0], nums[1:], True):
-            res += r
-    return res
+    data = [(operation[0], operation[1:]) for operation in data]
+    return sum([r for r, nums in data if solve(r, nums[0], nums[1:], True)])
 
 
 def solve(target: int, temp_res: int, nums: typing.List[int], concatenate: bool = False):
     if not nums:
         return temp_res == target
 
-    m = solve(target, temp_res * nums[0], nums[1:], concatenate)
-    p = solve(target, temp_res + nums[0], nums[1:], concatenate)
-
     if not concatenate:
-        return m or p
+        return (solve(target, temp_res * nums[0], nums[1:], concatenate) or
+                solve(target, temp_res + nums[0], nums[1:], concatenate))
 
-    c = solve(target, int(f'{temp_res}{nums[0]}'), nums[1:], concatenate)
-    return m or p or c
+    return (solve(target, temp_res * nums[0], nums[1:], concatenate) or
+            solve(target, temp_res + nums[0], nums[1:], concatenate) or
+            solve(target, int(f'{temp_res}{nums[0]}'), nums[1:], concatenate))
 
 
 if __name__ == '__main__':
