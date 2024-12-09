@@ -4,17 +4,25 @@ Challenge Link: https://adventofcode.com/2024/day/9
 Paste sample and your input in the dedicated files and run the code to see the results.
 """
 
-import re
+from itertools import chain
+from typing import List
 
 import read_data
 
 
-def solve_part_1(data) -> int:
-    rearranged = rearrange(data)
+def solve_part_1(data: List[int]) -> int:
+    nums = get_nums(data)
+    rearranged = rearrange(nums)
     return get_checksum(rearranged)
 
 
-def rearrange(nums):
+def solve_part_2(data: List[int]) -> int:
+    nums = get_nums(data)
+    rearranged = rearrange_2(nums)
+    return get_checksum(rearranged)
+
+
+def rearrange(nums: List[int | str]) -> List[int | str]:
     spaces = []
     for i, n in enumerate(nums):
         if n == '.':
@@ -30,47 +38,27 @@ def rearrange(nums):
     return nums
 
 
-def rearrange_2(nums):
-    # Improvements in progress
-    # TODO: change logic, refactor, improve execution time
+def find_group_id(nums: List[List[int | str]], gr_id: int) -> int:
+    for i, gr in enumerate(nums):
+        if gr[0] == gr_id:
+            return i
+    return -1
 
-    spaces = re.finditer(r'\.+', ''.join([str(s) for s in nums]))
-    spaces = [(sp.start(), sp.end()) for sp in spaces]
-    cant_move = 0
-    i, j = 0, 0
-    while i < len(nums) and sum(1 for n in nums[nums.index('.') + 1:] if n != '.') - cant_move >= 0:
-        n = nums[~i]
-        if n == '.':
-            i += 1
-            continue
-        cur = re.search(fr'{n}+', ''.join([str(s) for s in nums]))
-        s, e = cur.start(), cur.end()
-        i = i + (e - s)
-        placed = False
-        j = 0
-        while j < len(spaces) and not placed:
-            sp_s, sp_e = spaces[j]
-            if e - s > sp_e - sp_s:
-                j += 1
-            else:
-                diff = (sp_e - sp_s) - (e - s)
-                nums[s:e], nums[sp_s:sp_e - diff] = nums[sp_s:sp_e][:e - s], nums[s:e]
-                if diff == 0:
-                    spaces.pop(j)
-                else:
-                    spaces[j] = (sp_s + (e - s), sp_e - diff + 1)
-                placed = True
-        if not placed:
-            cant_move += (e - s)
+
+def rearrange_2(nums: List[int]) -> List[int | str]:
+    nums = group_consecutive(nums)
+    ids = set(chain.from_iterable(nums))
+    ids.remove('.')
+    spaces = get_spaces_indices(nums)
+    for n in sorted(ids, reverse=True):
+        i = find_group_id(nums, n)
+        nums = move_group(nums, spaces, i)
+        spaces = get_spaces_indices(nums)
+    nums = list(chain.from_iterable(nums))
     return nums
 
 
-def solve_part_2(data) -> int:
-    rearranged = rearrange_2(data)
-    return get_checksum(rearranged)
-
-
-def get_nums(data):
+def get_nums(data: List[int]) -> List[int | str]:
     nums = []
     for i, n in enumerate(data):
         if i % 2 == 0:
@@ -80,22 +68,50 @@ def get_nums(data):
     return nums
 
 
-def get_checksum(nums):
-    r = 0
+def group_consecutive(nums: List[int | str]) -> List[List[int | str]]:
+    grouped, t = [], []
     for i, n in enumerate(nums):
-        if n != '.':
-            r += (i * n)
-    return r
+        if not t or t[0] == n:
+            t.append(n)
+        else:
+            grouped.append(t)
+            t = [n]
+    if t:
+        grouped.append(t)
+    return grouped
+
+
+def move_group(nums: List[List[int | str]], space_indices: List[int], gr_index: int) -> List[List[int | str]]:
+    for s_i in space_indices:
+        if s_i >= gr_index:
+            return nums
+        l1, l2 = len(nums[s_i]), len(nums[gr_index])
+        if l1 >= l2:
+            nums[gr_index], nums[s_i] = ['.' for _ in range(l2)], nums[gr_index]
+            if l1 - l2 > 0:
+                nums.insert(s_i + 1, ['.' for _ in range(l1 - l2)])
+            nums = list(chain.from_iterable(nums))
+            nums = group_consecutive(nums)
+            return nums
+    return nums
+
+
+def get_spaces_indices(nums: List[List[int | str]]) -> List[int]:
+    return [i for i, gr in enumerate(nums) if gr[0] == '.']
+
+
+def get_checksum(nums: List[int | str]) -> int:
+    return sum(i * n for i, n in enumerate(nums) if n != '.')
 
 
 if __name__ == '__main__':
-    sample = get_nums([int(n) for n in read_data.get_data_00('sample.txt')])
-    my_input = get_nums([int(n) for n in read_data.get_data_00('input.txt')])
+    sample = [int(n) for n in read_data.get_data_00('sample.txt')]
+    my_input = [int(n) for n in read_data.get_data_00('input.txt')]
 
     example_1 = solve_part_1(sample)
     part_1 = solve_part_1(my_input)
     print(f'Part 1:\tExample: {example_1} | Solution: {part_1}')
 
-    # example_2 = solve_part_2(sample)
-    # part_2 = solve_part_2(my_input)
-    # print(f'Part 2:\tExample: {example_2} | Solution: {part_2}')
+    example_2 = solve_part_2(sample)
+    part_2 = solve_part_2(my_input)
+    print(f'Part 2:\tExample: {example_2} | Solution: {part_2}')
