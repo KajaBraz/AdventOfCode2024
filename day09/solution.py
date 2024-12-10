@@ -23,18 +23,15 @@ def solve_part_2(data: List[int]) -> int:
 
 
 def rearrange(nums: List[int | str]) -> List[int | str]:
-    spaces = []
-    for i, n in enumerate(nums):
-        if n == '.':
-            spaces.append(i)
+    spaces = [i for i, n in enumerate(nums) if n == '.']
     j = 0
-    for i, n in enumerate(nums[::-1]):
-        if n != '.':
-            nums[~i], nums[spaces[j]] = nums[spaces[j]], nums[~i]
-            j += 1
-            to_move = sum(1 for n in nums[nums.index('.') + 1:] if n != '.')
-            if j >= len(spaces) or to_move == 0:
-                break
+    for i, n in reversed(list(enumerate(nums))):
+        if n == '.':
+            continue
+        nums[i], nums[spaces[j]] = nums[spaces[j]], nums[i]
+        j += 1
+        if spaces[j] > i:
+            break
     return nums
 
 
@@ -45,15 +42,15 @@ def find_group_id(nums: List[List[int | str]], gr_id: int) -> int:
     return -1
 
 
-def rearrange_2(nums: List[int]) -> List[int | str]:
-    nums = group_consecutive(nums)
-    ids = set(chain.from_iterable(nums))
+def rearrange_2(nums: List[int | str]) -> List[int | str]:
+    ids = set(nums)
     ids.remove('.')
-    spaces = get_spaces_indices(nums)
+    nums = group_consecutive(nums)
+    i = len(nums) - 1
     for n in sorted(ids, reverse=True):
-        i = find_group_id(nums, n)
-        nums = move_group(nums, spaces, i)
-        spaces = get_spaces_indices(nums)
+        while nums[i][0] != n:
+            i -= 1
+        nums = move_group(nums, i)
     nums = list(chain.from_iterable(nums))
     return nums
 
@@ -81,18 +78,15 @@ def group_consecutive(nums: List[int | str]) -> List[List[int | str]]:
     return grouped
 
 
-def move_group(nums: List[List[int | str]], space_indices: List[int], gr_index: int) -> List[List[int | str]]:
-    for s_i in space_indices:
-        if s_i >= gr_index:
-            return nums
-        l1, l2 = len(nums[s_i]), len(nums[gr_index])
-        if l1 >= l2:
-            nums[gr_index], nums[s_i] = ['.' for _ in range(l2)], nums[gr_index]
-            if l1 - l2 > 0:
-                nums.insert(s_i + 1, ['.' for _ in range(l1 - l2)])
-            nums = list(chain.from_iterable(nums))
-            nums = group_consecutive(nums)
-            return nums
+def move_group(nums: List[List[int | str]], gr_index: int) -> List[List[int | str]]:
+    for s_i in range(len(nums[:gr_index])):
+        if nums[s_i][0] == '.':
+            l1, l2 = len(nums[s_i]), len(nums[gr_index])
+            if l1 >= l2:
+                nums[gr_index], nums[s_i] = ['.' for _ in range(l2)], nums[gr_index]
+                if l1 - l2 > 0:
+                    nums.insert(s_i + 1, ['.' for _ in range(l1 - l2)])
+                return nums
     return nums
 
 
