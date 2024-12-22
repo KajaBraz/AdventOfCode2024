@@ -5,7 +5,8 @@ Paste sample and your input in the dedicated files and run the code to see the r
 """
 
 import itertools
-import re
+import math
+import typing
 
 import read_data
 
@@ -28,61 +29,80 @@ ARROWS = {'A': (0, 2),
           '>': (1, 2)}
 
 
-def get_from_to_num_path(source, target):
+def solve_part_1(data) -> int:
+    return solve(data, 2)
+
+
+def solve_part_2(data: typing.List[str]) -> int:
+    return solve(data, 25)
+
+
+def solve(data, chain_len):
+    result = 0
+    for code in data:
+        d = int(code[:-1])
+        candidates = reach_nums(code)
+        temp = []
+        for candidate in candidates:
+            temp.append(solve_rec(f'A{candidate}', chain_len, {}))
+        seq_len = min(temp)
+        result += (d * seq_len)
+    return result
+
+
+def solve_rec(p: str, level: int, memo: typing.Dict[typing.Tuple[str, int], int]) -> int:
+    t = (p, level)
+    if t in memo:
+        return memo[t]
+    if level == 0:
+        return len(p) - 1
+    result = 0
+    for i in range(1, len(p)):
+        r = math.inf
+        pp = [''.join(t) for t in get_from_to_arrow_path(p[i - 1], p[i])]
+        for ppp in pp:
+            r = min(r, solve_rec(f'A{ppp}A', level - 1, memo))
+        result += r
+    memo[t] = result
+    return memo[t]
+
+
+def get_from_to_num_path(source: str, target: str) -> typing.List[typing.Tuple]:
     x, y = NUMS[source]
     i, j = NUMS[target]
     horizontal = y - j
     vertical = x - i
-    if x == 3:
-        path = get_dir_arrows(False, vertical) + get_dir_arrows(True, horizontal)
-    else:
-        path = get_dir_arrows(True, horizontal) + get_dir_arrows(False, vertical)
+    path = get_dir_arrows(True, horizontal) + get_dir_arrows(False, vertical)
     paths = get_variants(path)
     return [path for path in paths if is_legal(path, (x, y), (3, 0))]
 
 
-def get_from_to_arrow_path(source, target):
+def get_from_to_arrow_path(source: str, target: str) -> typing.List[typing.Tuple]:
     x, y = ARROWS[source]
     i, j = ARROWS[target]
     horizontal = y - j
     vertical = x - i
-    if x == 0:
-        path = get_dir_arrows(False, vertical) + get_dir_arrows(True, horizontal)
-    else:
-        path = get_dir_arrows(True, horizontal) + get_dir_arrows(False, vertical)
+    path = get_dir_arrows(True, horizontal) + get_dir_arrows(False, vertical)
     paths = get_variants(path)
     paths = [path for path in paths if is_legal(path, (x, y), (0, 0))]
     return paths
 
 
-def get_variants(path):
-    p = itertools.permutations(path)
-    return p
+def get_variants(path: str) -> itertools.permutations:
+    return itertools.permutations(path)
 
 
-def is_legal(possible_path, cur_pos, illegal_pos):
-    m, n = 0, 0
+def is_legal(possible_path: typing.Tuple, cur_pos: typing.Tuple[int, int], illegal_pos: typing.Tuple[int, int]) -> bool:
+    displacement = {'v': (1, 0), '^': (-1, 0), '<': (0, -1), '>': (0, 1)}
     for c in possible_path:
-        if c == 'v':
-            m, n = 1, 0
-        elif c == '^':
-            m, n = -1, 0
-        elif c == '<':
-            m, n = 0, -1
-        elif c == '>':
-            m, n = 0, 1
+        m, n = displacement[c]
         cur_pos = cur_pos[0] + m, cur_pos[1] + n
         if cur_pos == illegal_pos:
             return False
     return True
 
 
-def solve(code):
-    if len(code) < 2:
-        return set()
-
-
-def get_dir_arrows(is_horizontal, diff):
+def get_dir_arrows(is_horizontal: bool, diff: int) -> str:
     if is_horizontal:
         arrow = '>' if diff <= 0 else '<'
         return arrow * abs(diff)
@@ -90,7 +110,7 @@ def get_dir_arrows(is_horizontal, diff):
     return arrow * abs(diff)
 
 
-def reach_nums(target_code):
+def reach_nums(target_code: str) -> typing.List[str]:
     current_button = 'A'
     result = []
     for button in target_code:
@@ -102,7 +122,7 @@ def reach_nums(target_code):
     return [f'{p}A' for p in final]
 
 
-def intermediate_move(target_path):
+def intermediate_move(target_path: str) -> typing.List[str]:
     current_button = 'A'
     result = []
     for button in target_path:
@@ -117,10 +137,10 @@ def intermediate_move(target_path):
     return [f'{p}A' for p in final]
 
 
-def solve_part_1(data) -> int:
+def solve_part_1_alternative(data: typing.List[str]) -> int:
     r = 0
     for code in data:
-        d = re.findall(r'\d+', code)[0]
+        d = int(code[:-1])
         p1 = reach_nums(code)
         p2 = []
         for p in p1:
@@ -128,7 +148,7 @@ def solve_part_1(data) -> int:
         p3 = []
         for p in p2:
             p3.extend(intermediate_move(p))
-        r = r + int(d) * len(min(p3, key=len))
+        r = r + d * len(min(p3, key=len))
     return r
 
 
@@ -139,3 +159,12 @@ if __name__ == '__main__':
     example_1 = solve_part_1(sample)
     part_1 = solve_part_1(my_input)
     print(f'Part 1:\tExample: {example_1} | Solution: {part_1}')
+
+    # Alternative solution for part 1
+    # example_1 = solve_part_1_alternative(sample)
+    # part_1 = solve_part_1_alternative(my_input)
+    # print(f'Part 1:\tExample: {example_1} | Solution: {part_1}')
+
+    example_2 = solve_part_2(sample)
+    part_2 = solve_part_2(my_input)
+    print(f'Part 2:\tExample: {example_2} | Solution: {part_2}')
